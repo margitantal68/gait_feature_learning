@@ -1,0 +1,8 @@
+__pycache__/
+histories/
+input_csv_gait/
+output_csv/
+TRAINING_CURVES/
+TRAINED_MODELS/
+results/
+
