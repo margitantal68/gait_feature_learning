@@ -52,5 +52,20 @@ A comparison of supervised and unsupervised feature learning methods in accelero
     * settings.py - enums and constants
 
 ## Results
-   ![Scores produced by autoencoder features](https://github.com/margitantal68/gait_feature_learning/blob/main/results/scores_ae_fcn_128.png?raw=true)
-   ![Scores produced by end-to-end features](https://github.com/margitantal68/gait_feature_learning/blob/main/results/scores_ee_fcn_128.png?eaw=true)
+   * 
+   * Scores 
+      * Scores produced by autoencoder features
+       ![Scores produced by autoencoder features](https://github.com/margitantal68/gait_feature_learning/blob/main/results/sameday_ae_scores_orig.png?raw=true)
+      * Scores produced by end-to-end features  
+      ![Scores produced by end-to-end features](https://github.com/margitantal68/gait_feature_learning/blob/main/results/sameday_ee_scores_orig.png)
+
+   * ROC curves using global thresholds
+      * Same-day - session 1
+      ![ROC - same day - session1](https://github.com/margitantal68/gait_feature_learning/blob/main/results/roc_session1.png?raw=true)
+      * Same day - session 2
+      ![ROC - same day - session2](https://github.com/margitantal68/gait_feature_learning/blob/main/results/roc_session2.png?raw=true)
+      * Cross day
+      ![ROC - same day - session2](https://github.com/margitantal68/gait_feature_learning/blob/main/results/roc_cross_session.png?raw=true)
+   
+   
+  
