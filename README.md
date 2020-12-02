@@ -59,6 +59,7 @@ A comparison of supervised and unsupervised feature learning methods in accelero
       * Scores produced by end-to-end features  
       ![Scores produced by end-to-end features](https://github.com/margitantal68/gait_feature_learning/blob/main/results/sameday_ee_scores_orig.png)
 
+
    * ROC curves using global thresholds
       * Same-day - session 1
       ![ROC - same day - session1](https://github.com/margitantal68/gait_feature_learning/blob/main/results/roc_session1.png?raw=true)
