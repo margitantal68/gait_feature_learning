@@ -51,3 +51,6 @@ A comparison of supervised and unsupervised feature learning methods in accelero
     * utils.py - utility functions
     * settings.py - enums and constants
 
+## Results
+   ![Scores produced by autoencoder features](https://github.com/margitantal68/gait_feature_learning/blob/main/results/scores_ae_fcn_128.png?raw=true)
+   ![Scores produced by end-to-end features](https://github.com/margitantal68/gait_feature_learning/blob/main/results/scores_ee_fcn_128.png?eaw=true)
