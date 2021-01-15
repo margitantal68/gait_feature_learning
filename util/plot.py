@@ -1,4 +1,4 @@
-import matplotlib.pyplot as plt
+
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -7,6 +7,10 @@ from util.utils import create_userids, print_list
 from util.normalization import normalize_rows
 from sklearn import metrics
 import util.settings as st
+import warnings
+
+
+warnings.filterwarnings("ignore")
 
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import LabelEncoder
@@ -39,7 +43,7 @@ def plot_raw_data( df, NUM_SAMPLES_PER_CLASS):
     NUM_USERS = len(userids)
     for i in range(0,NUM_USERS):
         userid = userids[i]
-        print(userid)
+        # print(userid)
         user_data = df.loc[df.iloc[:, -1].isin([userid])]
         # Select data for training
         user_data = user_data.drop(user_data.columns[-1], axis=1)
@@ -53,7 +57,80 @@ def plot_raw_data( df, NUM_SAMPLES_PER_CLASS):
         output_file = str(userids[ i ]) + '.png'
         print(output_file)
         plt.savefig(st.OUTPUT_FIGURES+"/"+output_file)
+
+# Mouse dynamics dx_dy
+
+def plot_user_dx_dy_histo( df ):
+    set_style()
+    userids = create_userids( df )
+    NUM_USERS = len(userids)
+    for i in range(0,NUM_USERS):
+        userid = userids[i]
+        print(userid)
+        user_data = df.loc[df.iloc[:, -1].isin([userid])]
+        # Select data for training
+        user_data = user_data.drop(user_data.columns[-1], axis=1)
+
+        user_dx = user_data[ user_data.columns[range(0,128)] ]
+        user_dy = user_data[ user_data.columns[range(128,256)] ]
+    
+        plt.clf()
+        result = []
+        [result.extend(el) for el in user_dx.values.tolist()]
+        sns.distplot(result, norm_hist=True, color='green', bins=32)
         
+        # n, bins, patches = plt.hist( result, 50 )
+        plt.xlabel('Bins')
+        plt.ylabel('Density')
+        plt.title(' dx histogram ')
+        output_file = str(userids[ i ]) + '_dx.png'
+        print(output_file)
+        plt.savefig(st.OUTPUT_FIGURES+"/"+output_file)
+
+        plt.clf()
+        result = []
+        [result.extend(el) for el in user_dy.values.tolist()]
+        ax = sns.distplot(result, norm_hist=True, color='red', bins=32)
+        print(ax)
+        # plt.hist( result )
+        plt.xlabel('Bins')
+        plt.ylabel('Density')
+        plt.title(' dy histogram ')
+        output_file = str(userids[ i ]) + '_dy.png'
+        # print(output_file)
+        plt.savefig(st.OUTPUT_FIGURES+"/"+output_file)
+
+
+# Mouse dynamics
+def plot_user_dt_histo( df ):
+    set_style()
+    userids = create_userids( df )
+    NUM_USERS = len(userids)
+    for i in range(0,NUM_USERS):
+        userid = userids[i]
+        print(userid)
+        user_data = df.loc[df.iloc[:, -1].isin([userid])]
+        # Select data for training
+        user_data = user_data.drop(user_data.columns[-1], axis=1)
+        user_dt = user_data[ user_data.columns[range(0,128)] ]
+    
+        plt.clf()
+        result = []
+        [result.extend(el) for el in user_dt.values.tolist()]
+        sns.distplot(result, norm_hist=True, color='green', bins=32)
+        
+        # n, bins, patches = plt.hist( result, 50 )
+        plt.xlabel('Bins')
+        plt.ylabel('Density')
+        plt.title(str(userids[ i ]) + ' dt histogram ')
+        output_file = str(userids[ i ]) + '_dt.png'
+        print(output_file)
+        plt.savefig(st.OUTPUT_FIGURES+"/"+output_file)
+
+        
+
+
+
 def plot_data_distribution( filename, plotname ):
     
     fig = plt.figure(figsize=(15, 12))
@@ -154,12 +231,16 @@ def myfunc( str ):
     return (int)(str[1:])
     
 
-def plot_tsne(input_name, output_fig_name, NUM_USERS, plot_title):
-    df = pd.read_csv(input_name)
+#  df - dataframe, last column contains the userid
+# [START_USER, STOP_USER)
+# 
+
+def plot_tsne(df, START_USER, STOP_USER, output_fig_name, plot_title):
+    # df = pd.read_csv(input_name)
     rows, cols = df.shape
 
-    df['user'] = df['user'].apply(lambda x: myfunc(x) )
-    select_classes = [ i for i in range(1, NUM_USERS+1)]
+    # df['user'] = df['user'].apply(lambda x: myfunc(x) )
+    select_classes = [ i for i in range(START_USER, STOP_USER)]
     df = df.loc[df[df.columns[-1]].isin(select_classes)]
 
     X = df.values
@@ -182,7 +263,7 @@ def plot_tsne(input_name, output_fig_name, NUM_USERS, plot_title):
   
   
     # legendstr =[]
-    # for i in range(1, NUM_USERS+1):
+    # for i in range(START_USER, STOP_USER):
     #     legendstr.append("USER "+str(i))
     # plt.legend( legendstr)
     
@@ -196,14 +277,34 @@ def plot_tsne(input_name, output_fig_name, NUM_USERS, plot_title):
 def plot_scores(positive_scores, negative_scores, filename='scores.png', title='Score distribution'):
     set_style()
     plt.clf()
+    df = pd.DataFrame([positive_scores, negative_scores])
+    BINS = np.linspace(df.min(), df.max(), 31)
+   
+    sns.distplot(positive_scores, norm_hist=True, color='green', bins=31)
+    sns.distplot(negative_scores, norm_hist=True, color='red', bins=31)
+    # plt.legend(loc='upper left')
+    
+    
+    plt.legend(['Genuine', 'Impostor'], loc='best')
+    plt.xlabel('Score')
+    plt.title(title)
+    plt.show()
+    plt.savefig(filename + '.png', format='png')
+    plt.savefig(filename + '.eps', format='eps')
+    
+
+
+def plot_scores_old(positive_scores, negative_scores, filename='scores.png', title='Score distribution'):
+    set_style()
+    plt.clf()
     plt.hist(positive_scores, bins=100, alpha = 0.5, color = 'green',  density = True, stacked = True)
     plt.hist(negative_scores, bins=100, alpha = 0.5, color = 'orange', density = True, stacked = True)
+
     plt.legend(['Genuine', 'Impostor'], loc='best')
     plt.xlabel('Score')
     plt.title(title)
     plt.show()
     plt.savefig(filename, format='png')
-    
 
 
 def set_style():
@@ -235,6 +336,7 @@ def plot_ROCs(raw_file, ae_file, ee_file, title = 'ROC curve', outputfilename='r
     ae_data  = pd.read_csv(ae_file) 
     ee_data  = pd.read_csv(ee_file) 
 
+    print(raw_data.shape)
     auc_raw = metrics.auc(raw_data['FPR'], raw_data['TPR'])
     auc_ae = metrics.auc(ae_data['FPR'], ae_data['TPR'])
     auc_ee = metrics.auc(ee_data['FPR'], ee_data['TPR'])
@@ -243,9 +345,9 @@ def plot_ROCs(raw_file, ae_file, ee_file, title = 'ROC curve', outputfilename='r
     plt.title(title)
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive rate')
-    plt.plot(raw_data['FPR'], raw_data['TPR'], label = 'AUC_RAW = %0.2f' % auc_raw)
-    plt.plot(ae_data['FPR'], ae_data['TPR'], label = 'AUC_AE = %0.2f' % auc_ae)
-    plt.plot(ee_data['FPR'], ee_data['TPR'], label = 'AUC_EE = %0.2f' % auc_ee)
+    plt.plot(raw_data['FPR'], raw_data['TPR'], ':', label = 'AUC_RAW = %0.2f' % auc_raw)
+    plt.plot(ae_data['FPR'], ae_data['TPR'], '--', label = 'AUC_AE = %0.2f' % auc_ae)
+    plt.plot(ee_data['FPR'], ee_data['TPR'], '-', label = 'AUC_EE = %0.2f' % auc_ee)
 
     label_raw = 'AUC raw = %0.2f' % auc_raw
     label_ae = 'AUC autoencoder = %0.2f' % auc_ae
@@ -255,5 +357,37 @@ def plot_ROCs(raw_file, ae_file, ee_file, title = 'ROC curve', outputfilename='r
     legend_str = [label_raw, label_ae, label_ee]
     plt.legend(legend_str)
     plt.show()
-    plt.savefig(outputfilename, format='eps')
-    
+    plt.savefig(outputfilename + '.png', format='png')
+    plt.savefig(outputfilename + '.eps', format='eps')
+
+def plot_ROC_single(ee_file, title = 'ROC curve', outputfilename='roc.png'):
+    set_style()
+    ee_data  = pd.read_csv(ee_file) 
+    auc_ee = metrics.auc(ee_data['FPR'], ee_data['TPR'])
+
+    plt.clf()
+    plt.title(title)
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive rate')
+    plt.plot(ee_data['FPR'], ee_data['TPR'], '-', label = 'AUC_EE = %0.2f' % auc_ee)
+
+    label_ee = 'AUC  = %0.2f' % auc_ee
+    legend_str = [label_ee]
+    plt.legend(legend_str)
+    plt.show()
+    plt.savefig(outputfilename + '.png', format='png')
+    plt.savefig(outputfilename + '.eps', format='eps')
+
+# create a boxplot from a dataframe
+# 
+def csv2boxplot(df, columns, title, ylabel, outputfilename):
+    myFig = plt.figure()
+    res = df.boxplot(column=columns, return_type='axes')
+    plt.title(title)
+    plt.xlabel('Type of features')
+    plt.ylabel(ylabel)
+    myFig.savefig('output_png/boxplot_sapimouse.png', format = 'png')
+    myFig.savefig(outputfilename + '.png', format='png')
+    myFig.savefig(outputfilename + '.eps', format='eps')
+    # plt.show(res)
+

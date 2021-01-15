@@ -19,6 +19,7 @@ from util.utils import create_userids
 from util.fcn import build_fcn
 from util.resnet import build_resnet
 
+
 import util.settings as stt
 
 ###########################################################
@@ -27,6 +28,32 @@ gpus = tf.config.experimental.list_physical_devices('GPU')
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 ###########################################################
+
+def plot_training(history, model_name, metrics ='loss'):
+    # list all data in history
+    print(history.history.keys())
+    keys = list(history.history.keys())
+    plt.figure()
+    if( metrics == 'loss'):
+        plt.plot(history.history[keys[0]])
+        plt.plot(history.history[keys[2]])
+        plt.title('Model loss ' + model_name)
+        plt.ylabel('loss')
+    
+    if( metrics == 'accuracy'):
+        plt.plot(history.history[keys[1]])
+        plt.plot(history.history[keys[3]])
+        # plt.plot(history.history['categorical_accuracy'])
+        # plt.plot(history.history['val_categorical_accuracy'])
+        plt.title('Model accuracy '+model_name)
+        plt.ylabel('accuracy')
+    
+
+    plt.xlabel('epoch')
+    plt.legend(['training', 'validation'], loc='upper left')
+    plt.show()
+    plt.savefig(stt.TRAINING_CURVES_PATH+'/'+model_name+'_'+metrics+'.png', format='png')
+
 
 
 # fcn_filters is used only for FCN model
@@ -67,15 +94,14 @@ def train_model( df, model_name = "foo.h5", fcn_filters=128, representation_lear
     filepath = stt.TRAINED_MODELS_PATH + "/" + model_name
 
     print(filepath)
-    if( stt.MODEL_TYPE == stt.ModelType.FCN ):
-        cb, model = build_fcn((stt.FEATURES, stt.DIMENSIONS ), nbclasses, filepath, fcn_filters )
-    if( stt.MODEL_TYPE == stt.ModelType.RESNET ):
-        cb, model = build_resnet((stt.FEATURES, stt.DIMENSIONS ), nbclasses, filepath )
-    
-    # if stt.UPDATE_WEIGHTS == True:
-    #     model = set_weights_from_pretrained_model(model)
 
-    # model.summary()
+    cb, model = build_fcn((stt.FEATURES, stt.DIMENSIONS ), nbclasses, filepath, fcn_filters )
+    
+    
+    if stt.UPDATE_WEIGHTS == True:
+        model = set_weights_from_pretrained_model(model)
+
+    model.summary()
 
     X_train = np.asarray(X_train).astype(np.float32)
     X_val = np.asarray(X_val).astype(np.float32)
@@ -107,13 +133,13 @@ def train_model( df, model_name = "foo.h5", fcn_filters=128, representation_lear
     hist_df = pd.DataFrame(hist.history) 
 
     # save to csv: 
-    # hist_csv_file = 'histories/'+model_name+'_history.csv'
-    # with open(hist_csv_file, mode='w') as f:
-    #     hist_df.to_csv(f)
+    hist_csv_file = 'histories/'+model_name+'_history.csv'
+    with open(hist_csv_file, mode='w') as f:
+        hist_df.to_csv(f)
   
     # plot training curve
-    # plot_training(hist, model_name, metrics ='loss')
-    # plot_training(hist, model_name, metrics ='accuracy')
+    plot_training(hist, model_name, metrics ='loss')
+    plot_training(hist, model_name, metrics ='accuracy')
 
     duration = time.time() - start_time
     print("Training duration: "+str(duration/60))
@@ -170,13 +196,13 @@ def get_model_output_features( df, model_name ):
     model_path = stt.TRAINED_MODELS_PATH + '/' + model_name
   
     model = tf.keras.models.load_model(model_path)
-    # model.summary()
-    # print(model_name)
+    model.summary()
+    print(model_name)
 
     feat_model = tf.keras.Sequential()
     for layer in model.layers[:-1]:
         feat_model.add(layer)
-    # feat_model.summary()
+    feat_model.summary()
 
     X = np.asarray(X).astype(np.float32)
 
@@ -189,29 +215,25 @@ def get_model_output_features( df, model_name ):
     # df.to_csv('features.csv', header = False, index=False)  
     return df
 
-def plot_training(history, model_name, metrics ='loss'):
-    # list all data in history
-    print(history.history.keys())
-    keys = list(history.history.keys())
-    plt.figure()
-    if( metrics == 'loss'):
-        plt.plot(history.history[keys[0]])
-        plt.plot(history.history[keys[2]])
-        plt.title('Model loss ' + model_name)
-        plt.ylabel('loss')
+
+
+
+def set_weights_from_pretrained_model(model):
+    model_path = stt.TRAINED_MODELS_PATH + '/' + stt.OLD_MODEL_NAME
+    try:
+        old_model = tf.keras.models.load_model(model_path)
+    except:
+        raise Exception(model_path + ' model does not exist!')
     
-    if( metrics == 'accuracy'):
-        plt.plot(history.history[keys[1]])
-        plt.plot(history.history[keys[3]])
-        # plt.plot(history.history['categorical_accuracy'])
-        # plt.plot(history.history['val_categorical_accuracy'])
-        plt.title('Model accuracy '+model_name)
-        plt.ylabel('accuracy')
-    
+    print('setting weights from '+model_path)
 
-    plt.xlabel('epoch')
-    plt.legend(['training', 'validation'], loc='upper left')
-    plt.show()
-    plt.savefig(stt.TRAINING_CURVES_PATH+'/'+model_name+'_'+metrics+'.png', format='png')
+    # Save the old model into SAVED_MODELS
+    if not os.path.exists(stt.SAVED_MODELS_PATH):
+        os.makedirs(stt.SAVED_MODELS_PATH)
+    old_model.save(stt.SAVED_MODELS_PATH + "/" + stt.MODEL_NAME)  
 
-
+    # Copy old model's weights to model
+    # The last layer weights will be ignored
+    for i in range(len(old_model.layers) - 1):
+        model.layers[i].set_weights(old_model.layers[i].get_weights())
+    return model

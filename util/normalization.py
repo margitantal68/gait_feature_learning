@@ -53,6 +53,28 @@ def normalize_columns( df, norm_type ):
     df['user'] = y 
     return df
 
+def normalize_all( df, norm_type = st.NormalizationType.ZSCORE ):
+    array = df.values
+    nsamples, nfeatures = array.shape
+    nfeatures = nfeatures - 1
+    X = array[:, 0:nfeatures]
+    y = array[:, -1]
+
+    result = []
+    [result.extend(el) for el in X.tolist()]
+    
+    mean = np.mean(result)
+    std  = np.std(result)
+    
+    for i in range(0,nsamples):
+        for j in range(0, nfeatures):
+            X[i, j ] = (X[i, j] - mean ) / std
+
+
+    df = pd.DataFrame( X )
+    df['user'] = y 
+    return df
+
 def normalize_users_columns( df, norm_type):
     print(df.shape)
     userids = create_userids( df )
